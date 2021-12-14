@@ -1,6 +1,30 @@
 import Config
 
-# Endpoint config moved to runtime.exs
+# For development, we disable any cache and enable
+# debugging and code reloading.
+#
+# The watchers configuration can be used to run external
+# watchers to your application. For example, we use it
+# with esbuild to bundle .js and .css sources.
+{run_web_server?, port} = case node do
+  :"web_1@127.0.0.1" -> {true, 4000}
+  :"web_2@127.0.0.1" -> {true, 4001}
+  _ -> {false, nil}
+end
+
+config :distrib, DistribWeb.Endpoint,
+  # Binding to loopback ipv4 address prevents access from other machines.
+  # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
+  http: [ip: {127, 0, 0, 1}, port: port],
+  server: run_web_server?
+  check_origin: false,
+  code_reloader: true,
+  debug_errors: true,
+  secret_key_base: "/zuEOO7TsJMgIWo8yxb9NfILEoFk1cbWY/XmIpPsYu3K3pRqWj0YDEhhxJB6wzXA",
+  watchers: [
+    # Start the esbuild watcher by calling Esbuild.install_and_run(:default, args)
+    esbuild: {Esbuild, :install_and_run, [:default, ~w(--sourcemap=inline --watch)]}
+  ]
 
 # ## SSL Support
 #

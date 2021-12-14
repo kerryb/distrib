@@ -11,36 +11,46 @@ defmodule Distrib.Application do
   def start(_type, _args) do
     topologies = [default: [strategy: Cluster.Strategy.Epmd, config: [hosts: @hosts]]]
 
-    children = [
-      # Horde
-      {Horde.Registry, [name: Distrib.Registry, keys: :unique, members: registry_members()]},
-      {Horde.DynamicSupervisor,
-       [
-         name: Distrib.DynamicSupervisor,
-         strategy: :one_for_one,
-         distribution_strategy: Horde.UniformQuorumDistribution,
-         max_restarts: 100_000,
-         max_seconds: 1,
-         members: supervisor_members()
-       ]},
+    children =
+      [
+        # Horde
+        {Horde.Registry, [name: Distrib.Registry, keys: :unique, members: registry_members()]},
+        {Horde.DynamicSupervisor,
+         [
+           name: Distrib.DynamicSupervisor,
+           strategy: :one_for_one,
+           distribution_strategy: Horde.UniformQuorumDistribution,
+           max_restarts: 100_000,
+           max_seconds: 1,
+           members: supervisor_members()
+         ]},
 
-      # libcluster
-      {Cluster.Supervisor, [topologies, [name: Distrib.ClusterSupervisor]]},
+        # libcluster
+        {Cluster.Supervisor, [topologies, [name: Distrib.ClusterSupervisor]]},
 
-      # Start the Telemetry supervisor
-      DistribWeb.Telemetry,
-      # Start the PubSub system
-      {Phoenix.PubSub, name: Distrib.PubSub},
-      # Start the Endpoint (http/https)
-      DistribWeb.Endpoint
-      # Start a worker by calling: Distrib.Worker.start_link(arg)
-      # {Distrib.Worker, arg}
-    ]
+        # Start the Telemetry supervisor
+        DistribWeb.Telemetry,
+        # Start the PubSub system
+        {Phoenix.PubSub, name: Distrib.PubSub},
+        # Start the Endpoint (http/https)
+        DistribWeb.Endpoint
+        # Start a worker by calling: Distrib.Worker.start_link(arg)
+        # {Distrib.Worker, arg}
+      ] ++ node_children()
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Distrib.Supervisor]
     Supervisor.start_link(children, opts)
+  end
+
+  defp node_children do
+    if String.starts_with?(to_string(node()), "tasks") do
+      IO.puts("Starting task server")
+      []
+    else
+      []
+    end
   end
 
   defp registry_members, do: Enum.map(@hosts, &{Distrib.Registry, &1})
