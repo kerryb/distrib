@@ -36,6 +36,7 @@ defmodule Distrib.MixProject do
       {:esbuild, "~> 0.3", runtime: Mix.env() == :dev},
       {:floki, ">= 0.30.0", only: :test},
       {:jason, "~> 1.2"},
+      {:horde, "~> 0.8"},
       {:libcluster, "~> 3.3"},
       {:phoenix, "~> 1.6.4"},
       {:phoenix_html, "~> 3.0"},
