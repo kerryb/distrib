@@ -7,7 +7,23 @@ defmodule Distrib.Application do
 
   @impl true
   def start(_type, _args) do
+    topologies = [
+      default: [
+        strategy: Cluster.Strategy.Epmd,
+        config: [
+          hosts: [
+            :"web_1@127.0.0.1",
+            :"web_2@127.0.0.1",
+            :"tasks_1@127.0.0.1",
+            :"tasks_2@127.0.0.1"
+          ]
+        ]
+      ]
+    ]
+
     children = [
+      # libcluster supervisor
+      {Cluster.Supervisor, [topologies, [name: Distrib.ClusterSupervisor]]},
       # Start the Telemetry supervisor
       DistribWeb.Telemetry,
       # Start the PubSub system
