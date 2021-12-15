@@ -29,6 +29,7 @@ defmodule Distrib.Queue do
   end
 
   def init(_args) do
+    Process.flag(:trap_exit, true)
     PubSub.subscribe(Distrib.PubSub, "tasks")
     report_queue_node()
     Process.send_after(self(), :start_task, :timer.seconds(1))
@@ -38,6 +39,7 @@ defmodule Distrib.Queue do
   defp via_tuple(name), do: {:via, Horde.Registry, {Distrib.Registry, name}}
 
   def task(number) do
+    Process.flag(:trap_exit, true)
     PubSub.broadcast!(Distrib.PubSub, "tasks", {:task_started, number, node()})
     Process.sleep(:timer.seconds(4))
     PubSub.broadcast!(Distrib.PubSub, "tasks", {:task_finished, number})
@@ -47,7 +49,7 @@ defmodule Distrib.Queue do
     node = Enum.random([node() | Node.list()])
 
     task =
-      Task.Supervisor.async_nolink({Distrib.TaskSupervisor, node}, __MODULE__, :task, [
+      Task.Supervisor.start_child({Distrib.TaskSupervisor, node}, __MODULE__, :task, [
         state.counter
       ])
 
