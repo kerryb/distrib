@@ -35,16 +35,22 @@ defmodule Distrib.Queue do
     {:ok, %{counter: 1, tasks: []}}
   end
 
-  def via_tuple(name), do: {:via, Horde.Registry, {Distrib.Registry, name}}
+  defp via_tuple(name), do: {:via, Horde.Registry, {Distrib.Registry, name}}
+
+  def task(number) do
+    PubSub.broadcast!(Distrib.PubSub, "tasks", {:task_started, number, node()})
+    Process.sleep(:timer.seconds(4))
+    PubSub.broadcast!(Distrib.PubSub, "tasks", {:task_finished, number})
+  end
 
   def handle_info(:start_task, state) do
-    task =
-      Task.Supervisor.async_nolink(Distrib.TaskSupervisor, fn ->
-        Process.sleep(:timer.seconds(4))
-        PubSub.broadcast!(Distrib.PubSub, "tasks", {:task_finished, state.counter})
-      end)
+    node = Enum.random([node() | Node.list()])
 
-        PubSub.broadcast!(Distrib.PubSub, "tasks", {:task_started, state.counter, node()})
+    task =
+      Task.Supervisor.async_nolink({Distrib.TaskSupervisor, node}, __MODULE__, :task, [
+        state.counter
+      ])
+
     Process.send_after(self(), :start_task, :timer.seconds(1))
 
     {:noreply,
