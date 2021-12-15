@@ -33,7 +33,7 @@ defmodule Distrib.Queue do
     PubSub.subscribe(Distrib.PubSub, "tasks")
     report_queue_node()
     Process.send_after(self(), :start_task, :timer.seconds(1))
-    {:ok, %{counter: 1, tasks: []}}
+    {:ok, %{counter: 1}}
   end
 
   defp via_tuple(name), do: {:via, Horde.Registry, {Distrib.Registry, name}}
@@ -48,15 +48,12 @@ defmodule Distrib.Queue do
   def handle_info(:start_task, state) do
     node = Enum.random([node() | Node.list()])
 
-    task =
-      Task.Supervisor.start_child({Distrib.TaskSupervisor, node}, __MODULE__, :task, [
-        state.counter
-      ])
+    Task.Supervisor.start_child({Distrib.TaskSupervisor, node}, __MODULE__, :task, [
+      state.counter
+    ])
 
     Process.send_after(self(), :start_task, :timer.seconds(1))
-
-    {:noreply,
-     %{state | counter: state.counter + 1, tasks: [{state.counter, task} | state.tasks]}}
+    {:noreply, %{state | counter: state.counter + 1}}
   end
 
   def handle_info(:ping_queue, state) do
