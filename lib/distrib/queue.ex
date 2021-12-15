@@ -31,9 +31,29 @@ defmodule Distrib.Queue do
   def init(_args) do
     Process.flag(:trap_exit, true)
     PubSub.subscribe(Distrib.PubSub, "tasks")
+    counter = load_counter()
     report_queue_node()
     Process.send_after(self(), :start_task, :timer.seconds(1))
-    {:ok, %{counter: 1}}
+    {:ok, %{counter: counter}}
+  end
+
+  defp load_counter do
+    {:ok, table} = :dets.open_file(__MODULE__, type: :set)
+
+    counter =
+      case :dets.lookup(__MODULE__, :counter) do
+        [counter: counter] -> counter
+        _ -> 1
+      end
+
+    :dets.close(table)
+    counter
+  end
+
+  def terminate(_reason, state) do
+    {:ok, table} = :dets.open_file(__MODULE__, type: :set)
+    :dets.insert(table, {:counter, state.counter})
+    :dets.close(table)
   end
 
   defp via_tuple(name), do: {:via, Horde.Registry, {Distrib.Registry, name}}
