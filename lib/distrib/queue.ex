@@ -41,9 +41,10 @@ defmodule Distrib.Queue do
     task =
       Task.Supervisor.async_nolink(Distrib.TaskSupervisor, fn ->
         Process.sleep(:timer.seconds(4))
-        PubSub.broadcast!(Distrib.PubSub, "tasks", {:task_started, state.counter})
+        PubSub.broadcast!(Distrib.PubSub, "tasks", {:task_finished, state.counter})
       end)
 
+        PubSub.broadcast!(Distrib.PubSub, "tasks", {:task_started, state.counter, node()})
     Process.send_after(self(), :start_task, :timer.seconds(1))
 
     {:noreply,

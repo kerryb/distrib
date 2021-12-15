@@ -16,12 +16,11 @@ defmodule DistribWeb.IndexLive do
     </p>
 
     <table>
-      <tr><th>Task number</th><th>Started</th><th>Finished</th></tr>
+      <tr><th>Task number</th><th>Node</th></tr>
       <%= for task <- @tasks do %>
         <tr>
           <td><%= task.number %></td>
-          <td><%= if task.started?, do: "✅" %></td>
-          <td><%= if task.finished?, do: "✅" %></td>
+          <td><%= task.node %></td>
         </tr>
       <% end %>
     </table>
@@ -41,11 +40,12 @@ defmodule DistribWeb.IndexLive do
     {:noreply, assign(socket, queue_node: node)}
   end
 
-  def handle_info({:task_started, number}, socket) do
-    {:noreply,
-     assign(socket,
-       tasks: [%{number: number, started?: true, finished?: false} | socket.assigns.tasks]
-     )}
+  def handle_info({:task_started, number, node}, socket) do
+    {:noreply, assign(socket, tasks: [%{number: number, node: node} | socket.assigns.tasks])}
+  end
+
+  def handle_info({:task_finished, number}, socket) do
+    {:noreply, assign(socket, tasks: Enum.reject(socket.assigns.tasks, &(&1.number == number)))}
   end
 
   def handle_info(message, socket) do
