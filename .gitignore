@@ -32,3 +32,5 @@ distrib-*.tar
 npm-debug.log
 /assets/node_modules/
 
+# dets table
+Elixir.Distrib.Queue
