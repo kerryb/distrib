@@ -9,7 +9,7 @@ defmodule DistribWeb.IndexLive do
     ~H"""
     <p>
       <%= if @queue_node do %>
-        Queue is running on <%= inspect @queue_node %>
+        Queue is running on <%= @queue_node %>
       <% else %>
         Queue is not running
       <% end %>
