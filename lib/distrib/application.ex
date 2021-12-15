@@ -5,7 +5,7 @@ defmodule Distrib.Application do
 
   use Application
 
-  @hosts [:"node_1@127.0.0.1", :"node_2@127.0.0.1"]
+  @hosts [:"node_1@127.0.0.1", :"node_2@127.0.0.1", :"node_3@127.0.0.1"]
 
   @impl true
   def start(_type, _args) do
