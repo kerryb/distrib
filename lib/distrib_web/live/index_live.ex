@@ -48,8 +48,8 @@ defmodule DistribWeb.IndexLive do
     {:noreply, assign(socket, tasks: Enum.reject(socket.assigns.tasks, &(&1.number == number)))}
   end
 
-  def handle_info(message, socket) do
-    Logger.info("#{__MODULE__} ignoring message #{inspect(message)}")
+  def handle_info(_message, socket) do
+    # Logger.info("#{__MODULE__} ignoring message #{inspect(message)}")
     {:noreply, socket}
   end
 end

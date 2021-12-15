@@ -56,8 +56,8 @@ defmodule Distrib.Queue do
     {:noreply, state}
   end
 
-  def handle_info(message, state) do
-    Logger.info("#{__MODULE__} ignoring message #{inspect(message)}")
+  def handle_info(_message, state) do
+    # Logger.info("#{__MODULE__} ignoring message #{inspect(message)}")
     {:noreply, state}
   end
 
