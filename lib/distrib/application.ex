@@ -27,6 +27,21 @@ defmodule Distrib.Application do
       # libcluster
       {Cluster.Supervisor, [topologies, [name: Distrib.ClusterSupervisor]]},
 
+      # Start singleton process once all nodes are up.
+      # Based on https://github.com/derekkraan/horde/blob/master/examples/hello_world/lib/hello_world/application.ex
+      %{
+        id: Distrib.ClusterConnector,
+        restart: :transient,
+        start:
+          {Task, :start_link,
+           [
+             fn ->
+               Horde.DynamicSupervisor.wait_for_quorum(Distrib.DynamicSupervisor, 30_000)
+               Horde.DynamicSupervisor.start_child(Distrib.DynamicSupervisor, Distrib.Queue)
+             end
+           ]}
+      },
+
       # Start the Telemetry supervisor
       DistribWeb.Telemetry,
       # Start the PubSub system
@@ -44,7 +59,7 @@ defmodule Distrib.Application do
   end
 
   defp registry_members, do: Enum.map(@hosts, &{Distrib.Registry, &1})
-  defp supervisor_members, do: Enum.map(@hosts, &{Distrib.Supervisor, &1})
+  defp supervisor_members, do: Enum.map(@hosts, &{Distrib.DynamicSupervisor, &1})
 
   # Tell Phoenix to update the endpoint configuration
   # whenever the application is updated.
