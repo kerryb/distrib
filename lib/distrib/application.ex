@@ -12,7 +12,6 @@ defmodule Distrib.Application do
     topologies = [default: [strategy: Cluster.Strategy.Epmd, config: [hosts: @hosts]]]
 
     children = [
-      # Horde
       {Horde.Registry, [name: Distrib.Registry, keys: :unique, members: registry_members()]},
       {Horde.DynamicSupervisor,
        [
@@ -23,9 +22,11 @@ defmodule Distrib.Application do
          max_seconds: 1,
          members: supervisor_members()
        ]},
-
-      # libcluster
       {Cluster.Supervisor, [topologies, [name: Distrib.ClusterSupervisor]]},
+      {Phoenix.PubSub, name: Distrib.PubSub},
+      DistribWeb.Telemetry,
+      DistribWeb.Endpoint,
+      {Task.Supervisor, name: Distrib.TaskSupervisor},
 
       # Start singleton process once all nodes are up.
       # Based on https://github.com/derekkraan/horde/blob/master/examples/hello_world/lib/hello_world/application.ex
@@ -40,20 +41,9 @@ defmodule Distrib.Application do
                Horde.DynamicSupervisor.start_child(Distrib.DynamicSupervisor, Distrib.Queue)
              end
            ]}
-      },
-
-      # Start the Telemetry supervisor
-      DistribWeb.Telemetry,
-      # Start the PubSub system
-      {Phoenix.PubSub, name: Distrib.PubSub},
-      # Start the Endpoint (http/https)
-      DistribWeb.Endpoint
-      # Start a worker by calling: Distrib.Worker.start_link(arg)
-      # {Distrib.Worker, arg}
+      }
     ]
 
-    # See https://hexdocs.pm/elixir/Supervisor.html
-    # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Distrib.Supervisor]
     Supervisor.start_link(children, opts)
   end

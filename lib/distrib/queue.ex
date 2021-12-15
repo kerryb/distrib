@@ -31,10 +31,24 @@ defmodule Distrib.Queue do
   def init(_args) do
     PubSub.subscribe(Distrib.PubSub, "tasks")
     report_queue_node()
-    {:ok, nil}
+    Process.send_after(self(), :start_task, :timer.seconds(1))
+    {:ok, %{counter: 1, tasks: []}}
   end
 
   def via_tuple(name), do: {:via, Horde.Registry, {Distrib.Registry, name}}
+
+  def handle_info(:start_task, state) do
+    task =
+      Task.Supervisor.async_nolink(Distrib.TaskSupervisor, fn ->
+        Process.sleep(:timer.seconds(4))
+        PubSub.broadcast!(Distrib.PubSub, "tasks", {:task_started, state.counter})
+      end)
+
+    Process.send_after(self(), :start_task, :timer.seconds(1))
+
+    {:noreply,
+     %{state | counter: state.counter + 1, tasks: [{state.counter, task} | state.tasks]}}
+  end
 
   def handle_info(:ping_queue, state) do
     report_queue_node()
@@ -45,6 +59,7 @@ defmodule Distrib.Queue do
     Logger.info("#{__MODULE__} ignoring message #{inspect(message)}")
     {:noreply, state}
   end
+
   defp report_queue_node do
     PubSub.broadcast!(Distrib.PubSub, "tasks", {:queue_running, node()})
   end
