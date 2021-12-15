@@ -8,10 +8,11 @@ defmodule DistribWeb.IndexLive do
   def render(assigns) do
     ~H"""
     <p>
+      This is <%= node() %>.
       <%= if @queue_node do %>
-        Queue is running on <%= @queue_node %>
+        Queue is running on <%= @queue_node %>.
       <% else %>
-        Queue is not running
+        Looking for queue &hellip;
       <% end %>
     </p>
 
