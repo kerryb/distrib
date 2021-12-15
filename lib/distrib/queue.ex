@@ -66,7 +66,7 @@ defmodule Distrib.Queue do
   end
 
   def handle_info(:start_task, state) do
-    node = Enum.random([node() | Node.list()])
+    node = [node() | Node.list()] |> Enum.filter(&supervisor_running?/1) |> Enum.random()
 
     Task.Supervisor.start_child({Distrib.TaskSupervisor, node}, __MODULE__, :task, [
       state.counter
@@ -84,6 +84,10 @@ defmodule Distrib.Queue do
   def handle_info(_message, state) do
     # Logger.info("#{__MODULE__} ignoring message #{inspect(message)}")
     {:noreply, state}
+  end
+
+  defp supervisor_running?(node) do
+    node |> :rpc.call(Process, :whereis, [Distrib.TaskSupervisor]) |> is_pid()
   end
 
   defp report_queue_node do
